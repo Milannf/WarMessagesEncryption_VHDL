@@ -1,0 +1,78 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+
+library work;
+use work.pattern_pkg.all;
+
+entity TB_FINPRO_PATTERN is
+end entity;
+
+architecture tb of TB_FINPRO_PATTERN is
+    function reverse_bits(v : std_logic_vector) return std_logic_vector is
+        variable r : std_logic_vector(v'range);
+    begin
+        for i in v'range loop
+            r(i) := v(v'low + v'high - i);
+        end loop;
+        return r;
+    end function;
+
+    signal step : integer := 0;
+
+    signal F_row : std_logic_vector(15 downto 0) := (others=>'0');
+    signal I_row : std_logic_vector(15 downto 0) := (others=>'0');
+    signal N_row : std_logic_vector(15 downto 0) := (others=>'0');
+    signal P_row : std_logic_vector(15 downto 0) := (others=>'0');
+    signal R_row : std_logic_vector(15 downto 0) := (others=>'0');
+    signal O_row : std_logic_vector(15 downto 0) := (others=>'0');
+
+begin
+
+    PATTERN_VIEW : process
+    begin
+        for step in 0 to 15 loop
+
+            if step <= F_PATTERN'right then
+                F_row <= reverse_bits(F_PATTERN(step));
+            else
+                F_row <= (others=>'0');
+            end if;
+
+            if step <= I_PATTERN'right then
+                I_row <= reverse_bits(I_PATTERN(step));
+            else
+                I_row <= (others=>'0');
+            end if;
+
+            if step <= N_PATTERN'right then
+                N_row <= reverse_bits(N_PATTERN(step));
+            else
+                N_row <= (others=>'0');
+            end if;
+
+            if step <= P_PATTERN'right then
+                P_row <= reverse_bits(P_PATTERN(step));
+            else
+                P_row <= (others=>'0');
+            end if;
+
+            if step <= R_PATTERN'right then
+                R_row <= reverse_bits(R_PATTERN(step));
+            else
+                R_row <= (others=>'0');
+            end if;
+
+            if step <= O_PATTERN'right then
+                O_row <= reverse_bits(O_PATTERN(step));
+            else
+                O_row <= (others=>'0');
+            end if;
+
+            wait for 50 ns;
+        end loop;
+
+        wait;
+    end process;
+
+end architecture;
