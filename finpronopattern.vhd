@@ -34,10 +34,6 @@ entity war_encryption is
 end entity;
 
 architecture rtl of war_encryption is
-
---------------------------------------------------------------------
--- STATE MACHINE
---------------------------------------------------------------------
 type t_State is (OFF, HOLD, ACTIVE, UP, PASSIVE, LOCK, SelfDes);
 signal current_state : t_State := OFF;
 signal NextState     : t_State;
@@ -46,10 +42,6 @@ signal timer_cnt : integer := 0;
 constant CLK_FREQ : integer := 50_000_000;
 constant TIME_30S : integer := CLK_FREQ * 30;
 constant TIME_60S : integer := CLK_FREQ * 60;
-
---------------------------------------------------------------------
--- MESSAGE STORAGE
---------------------------------------------------------------------
 constant MAX_MSG : integer := 16;
 
 type MsgArray is array(0 to MAX_MSG-1) of std_logic_vector(4 downto 0);
@@ -60,16 +52,10 @@ signal KeyStore : KeyArray := (others => (others=>'0'));
 
 signal MsgPtr : integer := 0;
 signal ReadingIndex : integer := 0;
-
--- READ MODE SIGNALING
 signal read_auth_ok : std_logic := '0';
 signal pattern_step : integer := 0;
 signal read_wait_cycles : integer := 0;
 signal Wordz : string(1 to 10);
-
-------------------------------------------------------------------
---  LFSR
-------------------------------------------------------------------
 signal lfsr_seed : std_logic_vector(15 downto 0) := "1100001100001100";
 
 function lfsr_next(seed : std_logic_vector(15 downto 0)) return std_logic_vector is
@@ -80,10 +66,6 @@ begin
     s := s(14 downto 0) & fb;
     return s;
 end function;
-
-------------------------------------------------------------------
---  WORD DECODER
-------------------------------------------------------------------
 function words_input_decode(
     b0,b1,b2,b3,b4,b5,b6,b7 : std_logic;
     b8,b9,b10,b11,b12,b13,b14,b15 : std_logic
@@ -102,10 +84,6 @@ begin
         when others             => return "tidaktau  ";
     end case;
 end function;
-
-------------------------------------------------------------------
---  RECORD MATCHING
-------------------------------------------------------------------
 function RecordMatching(ID : std_logic_vector(6 downto 0); W : string) return boolean is
 begin
     if    (ID="0011001" and W="tango     ") then return true;
@@ -117,10 +95,6 @@ begin
     else return false;
     end if;
 end function;
-
-------------------------------------------------------------------
--- PASSWORD CHECK
-------------------------------------------------------------------
 constant Write_Pwd : std_logic_vector(6 downto 0) := "0001111";
 constant Exit_Pwd  : std_logic_vector(6 downto 0) := "0000000";
 
@@ -128,13 +102,7 @@ function Match_UP_Pass(P : std_logic_vector(6 downto 0)) return boolean is
 begin return P = Write_Pwd; end;
 function Match_Exit_Pass(P : std_logic_vector(6 downto 0)) return boolean is
 begin return P = Exit_Pwd; end;
-
--- INTERNAL OUTPUT
 signal BBits_internal : std_logic_vector(15 downto 0);
-
---------------------------------------------------------------------
--- OPCODES (TIDAK DIPINDAH KE PACKAGE)
---------------------------------------------------------------------
 constant O_A   : std_logic_vector(4 downto 0) := "11001";
 constant O_B   : std_logic_vector(4 downto 0) := "11000";
 constant O_C   : std_logic_vector(4 downto 0) := "10111";
@@ -162,10 +130,6 @@ constant O_X   : std_logic_vector(4 downto 0) := "00010";
 constant O_Y   : std_logic_vector(4 downto 0) := "00001";
 constant O_Z   : std_logic_vector(4 downto 0) := "00000";
 constant O_SPC : std_logic_vector(4 downto 0) := "11111";
-
---------------------------------------------------------------------
--- PATTERN SELECTOR (PAKAI PACKAGE!)
---------------------------------------------------------------------
 function PatternOf(op : std_logic_vector(4 downto 0)) return PatternArray is
 begin
     case op is
@@ -198,10 +162,6 @@ begin
         when others => return ZERO_PATTERN;
     end case;
 end function;
-
---------------------------------------------------------------------
--- PATTERN LENGTH (AMAN, TANPA PatternOf(op)'length)
---------------------------------------------------------------------
 function PatternLength(op : std_logic_vector(4 downto 0)) return integer is
 begin
     case op is
@@ -236,9 +196,6 @@ begin
     end case;
 end function;
 
---------------------------------------------------------------------
--- SAFE ROW ACCESSOR (TANPA VARIABLE P : PatternArray)
---------------------------------------------------------------------
 function PatternRow(op : std_logic_vector(4 downto 0); idx : integer)
     return PatternStep is
 begin
@@ -447,14 +404,8 @@ begin
 end function;
 
 
---------------------------------------------------------------------
--- LOG FILE
---------------------------------------------------------------------
 file LogFile : text open write_mode is "write_log.txt";
 
---------------------------------------------------------------------
--- WRITE MODE = ENKRIPSI DAN OUTPUT TXT
---------------------------------------------------------------------
 begin
 process(CLK)
     variable L : line;
@@ -473,12 +424,9 @@ begin
                 seed := lfsr_next(lfsr_seed);
                 lfsr_seed <= seed;
 
-
-                -- simpan
                 MsgStore(MsgPtr) <= UserBits(4 downto 0);
                 KeyStore(MsgPtr) <= seed;
 
-                -- PRINT TXT
                 for i in 1 to 5 loop
                     op_str(i) := sl_to_char(UserBits(5-i));
                 end loop;
@@ -502,9 +450,6 @@ begin
     end if;
 end process;
 
---------------------------------------------------------------------
--- READ MODE: TAMPILKAN PATTERN DI WAVEFORM
---------------------------------------------------------------------
 process(CLK)
     variable opdec : std_logic_vector(4 downto 0);
 begin
@@ -539,7 +484,6 @@ begin
                     end if;
 
                 else
-                    -- next character
                     ReadingIndex <= ReadingIndex + 1;
                     read_auth_ok <= '0';
                     pattern_step <= 0;
@@ -551,10 +495,6 @@ begin
 
     end if;
 end process;
-
---------------------------------------------------------------------
--- OUTPUT MAPPER
---------------------------------------------------------------------
 BBit0  <= BBits_internal(0);
 BBit1  <= BBits_internal(1);
 BBit2  <= BBits_internal(2);
@@ -584,10 +524,6 @@ begin
         );
     end if;
 end process;
-
-------------------------------------------------------------------
--- STATE MACHINE TIMER + UPDATE
-------------------------------------------------------------------
 process(CLK,RST)
 begin
     if RST='1' then
@@ -603,10 +539,6 @@ begin
         current_state <= NextState;
     end if;
 end process;
-
-------------------------------------------------------------------
--- STATE MACHINE LOGIC
-------------------------------------------------------------------
 process(current_state, enable, MachID, Wordz, Pswd, timer_cnt, write_flag, read_flag)
 begin
     NextState <= current_state;
@@ -675,6 +607,7 @@ begin
 end process;
 
 end architecture;
+
 
 
 
